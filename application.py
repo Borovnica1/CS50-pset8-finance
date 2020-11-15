@@ -51,7 +51,30 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
-    return apology("TODO")
+    if request.method == "POST":
+        symbol = request.form.get("symbol")
+        stocks = request.form.get("shares")
+        price = lookup(symbol)["price"]
+        userid = session["user_id"]
+        print(price, stocks)
+        costOfStocks = price * float(stocks)
+        """db.execute("INSERT INTO transactions (username, hash) VALUES (:username, :password)", username=username, password=password)"""
+        userCash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
+        username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
+        print(userid, userCash, costOfStocks, username)
+        if not request.form.get("symbol"):
+            return apology("must provide correct symbol share", 403)
+        elif not request.form.get("shares"):
+            return apology("must provide number of shares", 403)
+        elif userCash - costOfStocks > 0:
+            print('can trade')
+            db.execute("INSERT INTO transactions (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks=stocks, symbol=symbol, costOfStocks=costOfStocks)
+            db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (userCash - costOfStocks, userid))
+        else:
+            return apology("Sorry you dont have sufficent funds", 403)
+
+
+    return render_template("buy.html")
 
 
 @app.route("/history")
@@ -82,6 +105,7 @@ def login():
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = :username",
                           username=request.form.get("username"))
+        print(rows)
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
@@ -89,6 +113,7 @@ def login():
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
+        print(rows[0]["id"])
 
         # Redirect user to home page
         return redirect("/")
@@ -117,7 +142,11 @@ def quote():
         symbol = request.form.get("symbol")
         result = lookup(symbol)
         print(result)
-        return render_template("quoted.html", result=result)
+        msg = f'{symbol} is not a legit share'
+        if not result:
+            return apology(msg, 403)
+        else:
+            return render_template("quoted.html", result=result)
 
 
     return render_template("quote.html")
