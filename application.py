@@ -113,13 +113,19 @@ def logout():
 @login_required
 def quote():
     """Get stock quote."""
-    return apology("TODO")
+    if request.method == "POST":
+        symbol = request.form.get("symbol")
+        result = lookup(symbol)
+        print(result)
+        return render_template("quoted.html", result=result)
+
+
+    return render_template("quote.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    id = 0
     if request.method == "POST":
         if not request.form.get("username"):
             return apology("must provide username", 403)
@@ -128,7 +134,6 @@ def register():
         elif request.form.get("confirmation") != request.form.get("password"):
             return apology("must confirm password", 403)
         else:
-            id = id + 1
             username = request.form.get("username")
             password = generate_password_hash(request.form.get("password"))
             db.execute("INSERT INTO users (username, hash) VALUES (:username, :password)", username=username, password=password)
