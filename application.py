@@ -44,7 +44,28 @@ if not os.environ.get("API_KEY"):
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return apology("TODO")
+    userid = session["user_id"]
+    username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
+    cash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
+    print(username)
+    stocks = db.execute("SELECT stock, SUM(stocks) stocks FROM transactions WHERE username=(?) GROUP BY stock", (username))
+    print(stocks)
+    userTotal = cash
+    for stock in stocks:
+        print(stock)
+        symbol = stock["stock"]
+        stockObj = lookup(symbol)
+        name = stockObj["name"]
+        price = stockObj["price"]
+        total = price * stock["stocks"]
+        stock["price"] = usd(price)
+        stock["total"] = usd(total)
+        stock["name"] = name
+        userTotal += total
+        print(stock)
+    print(stocks)
+    print(cash)
+    return render_template("index.html", stocks=stocks, cash=usd(cash), userTotal=usd(userTotal))
 
 
 @app.route("/buy", methods=["GET", "POST"])

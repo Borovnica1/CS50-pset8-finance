@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">Symbol</th>
+      <th scope="col">Name</th>
+      <th scope="col">Shares</th>
+      <th scope="col">Price</th>
+      <th scope="col">Total</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for stock in stocks %}
+        <tr>
+          <th scope="row">{{ stock.stock }}</th>
+          <td>{{ stock.name }}</td>
+          <td>{{ stock.stocks }}</td>
+          <td>{{ stock.price }}</td>
+          <td>{{ stock.total }}</td>
+        </tr>
+    {% endfor %}
+    <tr>
+      <th scope="row">CASH</th>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>{{ cash }}</td>
+    </tr>
+    <tr class="table-light">
+      <th scope="row"></th>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td>{{ userTotal }}</td>
+    </tr>
+  </tbody>
+</table>
+{% endblock %}
