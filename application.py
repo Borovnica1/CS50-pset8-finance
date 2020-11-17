@@ -48,7 +48,7 @@ def index():
     username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
     cash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
     print(username)
-    stocks = db.execute("SELECT stock, SUM(stocks) stocks FROM transactions WHERE username=(?) GROUP BY stock", (username))
+    stocks = db.execute("SELECT stock, SUM(stocks) stocks FROM transactions2 WHERE username=(?) GROUP BY stock", (username))
     stocksToDelete = []
     print(stocks)
     userTotal = cash
@@ -84,7 +84,7 @@ def buy():
         userid = session["user_id"]
         print(price, stocks)
         costOfStocks = price * float(stocks)
-        """db.execute("INSERT INTO transactions (username, hash) VALUES (:username, :password)", username=username, password=password)"""
+        """db.execute("INSERT INTO transactions2 (username, hash) VALUES (:username, :password)", username=username, password=password)"""
         userCash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
         username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
         print(userid, userCash, costOfStocks, username)
@@ -94,7 +94,7 @@ def buy():
             return apology("must provide number of shares", 403)
         elif userCash - costOfStocks > 0:
             print('can trade')
-            db.execute("INSERT INTO transactions (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks=stocks, symbol=symbol, costOfStocks=costOfStocks)
+            db.execute("INSERT INTO transactions2 (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks=stocks, symbol=symbol, costOfStocks=costOfStocks)
             db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (userCash - costOfStocks, userid))
             return redirect("/")
         else:
@@ -109,7 +109,13 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    return apology("TODO")
+    userid = session["user_id"]
+    username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
+    transactions = db.execute("SELECT * FROM transactions2 WHERE username=(?)", (username))
+    for transaction in transactions:
+        transaction["cost"] = usd(transaction["cost"])
+    print(transactions)
+    return render_template("history.html", transactions=transactions)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -206,7 +212,7 @@ def sell():
     if request.method == "GET":
         userid = session["user_id"]
         username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
-        stocks = db.execute("SELECT stock, SUM(stocks) FROM transactions WHERE username=(?) GROUP BY stock", (username))
+        stocks = db.execute("SELECT stock, SUM(stocks) FROM transactions2 WHERE username=(?) GROUP BY stock", (username))
         print(stocks)
         for stock in stocks:
             if stock["SUM(stocks)"] == 0:
@@ -222,7 +228,7 @@ def sell():
         costOfStocks = price * float(stocks)
         userCash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
         username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
-        userStocks = db.execute("SELECT SUM(stocks) FROM transactions WHERE username=(?) AND stock=(?) GROUP BY stock", (username, symbol))[0]["SUM(stocks)"]
+        userStocks = db.execute("SELECT SUM(stocks) FROM transactions2 WHERE username=(?) AND stock=(?) GROUP BY stock", (username, symbol))[0]["SUM(stocks)"]
         print(userid, userCash, costOfStocks, username, userStocks)
         if not request.form.get("symbol"):
             return apology("must provide correct symbol share", 403)
@@ -230,7 +236,7 @@ def sell():
             return apology("must provide number of shares", 403)
         elif userStocks >= int(stocks):
             print('can sell')
-            db.execute("INSERT INTO transactions (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks='-'+stocks, symbol=symbol, costOfStocks=costOfStocks)
+            db.execute("INSERT INTO transactions2 (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks='-'+stocks, symbol=symbol, costOfStocks=costOfStocks)
             db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (userCash + costOfStocks, userid))
             return redirect("/")
         else:
