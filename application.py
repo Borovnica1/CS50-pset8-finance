@@ -49,6 +49,7 @@ def index():
     cash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
     print(username)
     stocks = db.execute("SELECT stock, SUM(stocks) stocks FROM transactions WHERE username=(?) GROUP BY stock", (username))
+    stocksToDelete = []
     print(stocks)
     userTotal = cash
     for stock in stocks:
@@ -62,7 +63,11 @@ def index():
         stock["total"] = usd(total)
         stock["name"] = name
         userTotal += total
-        print(stock)
+        if stock["stocks"] == 0:
+            print('lol')
+            stocksToDelete.append(stock)
+    for stock in stocksToDelete:
+        stocks.remove(stock)
     print(stocks)
     print(cash)
     return render_template("index.html", stocks=stocks, cash=usd(cash), userTotal=usd(userTotal))
@@ -91,8 +96,10 @@ def buy():
             print('can trade')
             db.execute("INSERT INTO transactions (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks=stocks, symbol=symbol, costOfStocks=costOfStocks)
             db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (userCash - costOfStocks, userid))
+            return redirect("/")
         else:
             return apology("Sorry you dont have sufficent funds", 403)
+
 
 
     return render_template("buy.html")
@@ -195,8 +202,40 @@ def register():
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
-    """Sell shares of stock"""
-    return apology("TODO")
+
+    if request.method == "GET":
+        userid = session["user_id"]
+        username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
+        stocks = db.execute("SELECT stock, SUM(stocks) FROM transactions WHERE username=(?) GROUP BY stock", (username))
+        print(stocks)
+        for stock in stocks:
+            if stock["SUM(stocks)"] == 0:
+                print('lol')
+                stocks.remove(stock)
+        return render_template("sell.html", names=stocks)
+    else:
+        symbol = request.form.get("symbol")
+        stocks = request.form.get("shares")
+        price = lookup(symbol)["price"]
+        userid = session["user_id"]
+        print(price, stocks)
+        costOfStocks = price * float(stocks)
+        userCash = db.execute("SELECT cash FROM users WHERE id=(?)", (userid))[0]["cash"]
+        username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
+        userStocks = db.execute("SELECT SUM(stocks) FROM transactions WHERE username=(?) AND stock=(?) GROUP BY stock", (username, symbol))[0]["SUM(stocks)"]
+        print(userid, userCash, costOfStocks, username, userStocks)
+        if not request.form.get("symbol"):
+            return apology("must provide correct symbol share", 403)
+        elif not request.form.get("shares"):
+            return apology("must provide number of shares", 403)
+        elif userStocks >= int(stocks):
+            print('can sell')
+            db.execute("INSERT INTO transactions (username, stocks, stock, cost) VALUES (:username, :stocks, :symbol, :costOfStocks)", username=username, stocks='-'+stocks, symbol=symbol, costOfStocks=costOfStocks)
+            db.execute("UPDATE users SET cash=(?) WHERE id=(?)", (userCash + costOfStocks, userid))
+            return redirect("/")
+        else:
+            return apology("Sorry you dont have that many stocks", 403)
+
 
 
 def errorhandler(e):
