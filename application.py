@@ -204,6 +204,28 @@ def register():
 
     return render_template("register.html")
 
+@app.route("/changepass", methods=["GET", "POST"])
+def changepass():
+    """Register user"""
+    if request.method == "POST":
+        userid = session["user_id"]
+        username = db.execute("SELECT username FROM users WHERE id=(?)", (userid))[0]["username"]
+        rows = db.execute("SELECT * FROM users WHERE username = :username",
+                          username=username)
+        if not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            return apology("must provide password", 403)
+        elif not request.form.get("newpassword"):
+            return apology("must provide new password", 403)
+        elif request.form.get("confirmation") != request.form.get("newpassword"):
+            return apology("must confirm password", 403)
+        else:
+            password = generate_password_hash(request.form.get("newpassword"))
+            db.execute("UPDATE users SET hash=(?) WHERE id=(?)", (password, userid))
+            return redirect("/")
+
+    return render_template("changepass.html")
+
+
 
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
