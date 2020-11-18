@@ -10,11 +10,49 @@
             <input class="form-control" name="password" placeholder="Password" type="password">
         </div>
         <div class="form-group">
-            <input class="form-control" name="newpassword" placeholder="New Password" type="password">
+            <input class="form-control" name="newpassword" placeholder="New Password" type="password" maxlength="22">
+        </div>
+        <div class="form-group">
+            <ul class="passinfo" style="display:none;width:230px;margin:auto;list-style:none;padding-inline-start:0;font-size:12px;text-align:left;color:red">
+                <li class="passmin">Password has at least 6 characters long!</li>
+                <li class="passupper">Password has at least one Upper Case!</li>
+                <li class="passnumber">Password has at least one number!</li>
+            </ul>
         </div>
         <div class="form-group">
             <input class="form-control" name="confirmation" placeholder="Confirm Password" type="password">
         </div>
         <button class="btn btn-primary" type="submit">Change Password</button>
     </form>
+
+    <script>
+        document.querySelector('[name="newpassword"]').addEventListener('keyup', () => {
+            document.querySelector('.passinfo').style.display = 'block';
+            if (document.querySelector('[name="newpassword"]').value == 0) {
+                document.querySelector('.passinfo').style.display = 'none';
+            }
+            if ((document.querySelector('[name="newpassword"]').value).length >= 6) {
+                document.querySelector('.passmin').style.color = 'green';
+            } else {
+                document.querySelector('.passmin').style.color = 'red';
+            }
+            if ((document.querySelector('[name="newpassword"]').value).toLowerCase() != (document.querySelector('[name="newpassword"]').value)) {
+                document.querySelector('.passupper').style.color = 'green';
+            } else {
+                document.querySelector('.passupper').style.color = 'red';
+            }
+            if (/\d/.test(document.querySelector('[name="newpassword"]').value)) {
+                document.querySelector('.passnumber').style.color = 'green';
+            } else {
+                document.querySelector('.passnumber').style.color = 'red';
+            }
+            if (((document.querySelector('[name="password"]').value).length >= 6) &&
+            ((document.querySelector('[name="password"]').value).toLowerCase() != (document.querySelector('[name="password"]').value)) &&
+            (/\d/.test(document.querySelector('[name="password"]').value))) {
+                document.querySelector('[type="submit"]').disabled = false;
+            } else {
+                document.querySelector('[type="submit"]').disabled = true;
+            }
+        })
+    </script>
 {% endblock %}
